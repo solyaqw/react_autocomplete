@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Person } from './types/Person';
 import debounce from 'lodash.debounce';
 import { AutocompleteProps } from './types/Autocomplete';
@@ -12,25 +12,30 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
   const [inputValue, setInputValue] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [filteredPeople, setFilteredPeople] = useState<Person[]>(people);
-  const [previousQuery, setPreviousQuery] = useState('');
 
-  const debouncedFilter = debounce((query: string) => {
-    if (query === previousQuery) {
-      return;
-    }
+  const previousQueryRef = React.useRef('');
 
-    setPreviousQuery(query);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedFilter = useCallback(
+    debounce((query: string) => {
+      if (query === previousQueryRef.current) {
+        return;
+      }
 
-    if (query === '') {
-      setFilteredPeople(people);
-    } else {
-      const filtered = people.filter(person =>
-        person.name.toLowerCase().includes(query.toLowerCase()),
-      );
+      previousQueryRef.current = query;
 
-      setFilteredPeople(filtered);
-    }
-  }, delay);
+      if (query === '') {
+        setFilteredPeople(people);
+      } else {
+        const filtered = people.filter(person =>
+          person.name.toLowerCase().includes(query.toLowerCase()),
+        );
+
+        setFilteredPeople(filtered);
+      }
+    }, delay),
+    [delay, people],
+  );
 
   useEffect(() => {
     debouncedFilter(inputValue);
